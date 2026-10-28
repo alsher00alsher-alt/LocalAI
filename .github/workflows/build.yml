@@ -8,10 +8,13 @@ jobs:
     - name: Set up JDK 17
       uses: actions/setup-java@v5
       with: { java-version: '17', distribution: 'temurin' }
-    - name: Setup Gradle 8.2
+    - name: Clone llama.cpp
+      run: |
+        cd app/src/main/cpp
+        git clone --depth 1 --branch b4218 https://github.com/ggerganov/llama.cpp.git
+    - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
-      with:
-        gradle-version: 8.2
+      with: { gradle-version: 8.2 }
     - name: Create local.properties
       run: echo "sdk.dir=/usr/local/lib/android/sdk" > local.properties
     - name: Build with Gradle

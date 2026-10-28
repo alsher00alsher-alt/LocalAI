@@ -5,7 +5,6 @@
 #include "llama.h"
 
 #define LOG_TAG "LlamaJNI"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 struct CtxWrap {
@@ -70,7 +69,7 @@ Java_com_ahmed_localai_LlamaBridge_generateNative(JNIEnv* env, jobject, jlong ha
     std::string result;
     for (int i = 0; i < max_tokens; i++) {
         llama_token id = llama_sampler_sample(smpl, w->ctx, -1);
-        if (llama_vocab_is_eog(w->model, id)) break;
+        if (llama_token_is_eog(w->model, id)) break;
         char buf[256];
         int len = llama_token_to_piece(w->model, id, buf, sizeof(buf), 0, true);
         if (len > 0) result.append(buf, len);

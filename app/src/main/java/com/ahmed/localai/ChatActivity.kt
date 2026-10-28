@@ -1,12 +1,18 @@
 package com.ahmed.localai
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,33 +27,37 @@ class ChatActivity : AppCompatActivity() {
     private var bridge: LlamaBridge? = null
     private var currentPath: String = ""
     private var chatHistory = StringBuilder()
+    private lateinit var spinner: Spinner
+    private var modelFiles: Array<File> = emptyArray()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
+        // طلب صلاحية التخزين
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 100)
+        }
+
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         val etMessage = findViewById<EditText>(R.id.etMessage)
         val btnSend = findViewById<Button>(R.id.btnSend)
-        val spinner = findViewById<Spinner>(R.id.spinnerModels)
+        spinner = findViewById(R.id.spinnerModels)
 
         chatAdapter = ChatAdapter(messages)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = chatAdapter
 
-        val modelsDir = File("/sdcard/Download/AHMED_AI")
-        val files = modelsDir.listFiles { f -> f.name.endsWith(".gguf", true) } ?: emptyArray()
-        val names = if (files.isEmpty()) arrayOf("مفيش موديلات - حمل من الشاشة السابقة") else files.map { it.name }.toTypedArray()
-        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
+        loadModelsList()
 
         btnSend.setOnClickListener {
             val text = etMessage.text.toString().trim()
             if (text.isEmpty()) return@setOnClickListener
-            if (files.isEmpty()) { Toast.makeText(this, "حمل موديل الأول", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
+            if (modelFiles.isEmpty()) { Toast.makeText(this, "حمل موديل الأول من المكتبة", Toast.LENGTH_SHORT).show(); return@setOnClickListener }
 
             val idx = spinner.selectedItemPosition
-            if (idx < 0 || idx >= files.size) return@setOnClickListener
-            val file = files[idx]
+            if (idx < 0 || idx >= modelFiles.size) return@setOnClickListener
+            val file = modelFiles[idx]
 
             messages.add(ChatMessage(text, true))
             chatAdapter.notifyItemInserted(messages.size - 1)
@@ -80,6 +90,21 @@ class ChatActivity : AppCompatActivity() {
                 recyclerView.scrollToPosition(thinkIdx)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadModelsList()
+    }
+
+    private fun loadModelsList() {
+        val modelsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AHMED_AI")
+        if (!modelsDir.exists()) modelsDir.mkdirs()
+        
+        modelFiles = modelsDir.listFiles { f -> f.name.endsWith(".gguf", true) } ?: emptyArray()
+        val names = if (modelFiles.isEmpty()) arrayOf("مفيش موديلات - حمل من المكتبة") else modelFiles.map { it.name }.toTypedArray()
+        
+        spinner.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
     }
 
     override fun onDestroy() { super.onDestroy(); bridge?.free() }

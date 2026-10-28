@@ -29,10 +29,17 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val model = models[position]
-        holder.name.text = model.name
-        holder.specs.text = "${model.description}\nRAM: ${model.requiredRam}GB | Size: ${model.sizeGb}GB"
-
-        Glide.with(holder.itemView.context).load(model.iconUrl).into(holder.icon)
+        
+        // تنظيف اسم الموديل عشان يبان حلو
+        val displayName = model.name.substringAfter("/")
+        holder.name.text = displayName
+        holder.specs.text = "الحجم: ${model.sizeGb}GB | الرام: ${model.requiredRam}GB\n${model.description}"
+        
+        // تحميل الأيقونة
+        Glide.with(holder.itemView.context)
+            .load(model.iconUrl)
+            .circleCrop()
+            .into(holder.icon)
 
         if (model.requiredRam > deviceRam) {
             holder.btn.isEnabled = false
@@ -48,7 +55,7 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
 
         holder.btn.setOnClickListener {
             startDownload(holder.itemView.context, model)
-            Toast.makeText(holder.itemView.context, "بدأ تنزيل ${model.name} في الخلفية! شوف شريط الإشعارات.", Toast.LENGTH_LONG).show()
+            Toast.makeText(holder.itemView.context, "بدأ التنزيل... تابع من الإشعارات", Toast.LENGTH_LONG).show()
             holder.btn.text = "جاري التنزيل..."
             holder.btn.isEnabled = false
         }
@@ -62,13 +69,14 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
     }
 
     private fun startDownload(context: Context, model: ModelItem) {
-        val fileName = "${model.name.replace(" ", "_")}.${if (model.category == "image") "safetensors" else "gguf"}"
+        val fileName = model.downloadUrl.substringAfterLast("/")
+        val folder = "AHMED_AI"
         
         val request = DownloadManager.Request(Uri.parse(model.downloadUrl))
-            .setTitle("AHMED AI: ${model.name}")
-            .setDescription("جاري تحميل النموذج...")
+            .setTitle("AHMED AI: $fileName")
+            .setDescription("جاري التحميل...")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "AHMED_AI/$fileName")
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "$folder/$fileName")
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
 

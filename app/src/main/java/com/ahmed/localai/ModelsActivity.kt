@@ -14,6 +14,7 @@ import com.google.gson.reflect.TypeToken
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import kotlin.math.roundToInt
 
 class ModelsActivity : AppCompatActivity() {
     private lateinit var adapter: ModelsAdapter
@@ -48,29 +49,68 @@ class ModelsActivity : AppCompatActivity() {
         Thread {
             try {
                 val client = OkHttpClient()
+                // بنجيب موديلات GGUF مرتّبة حسب التحميلات
                 val request = Request.Builder()
-                    .url("https://huggingface.co/api/models?filter=gguf&sort=downloads&limit=1000")
+                    .url("https://huggingface.co/api/models?filter=gguf&sort=downloads&limit=100")
                     .build()
                 val response = client.newCall(request).execute()
                 val json = response.body?.string() ?: "[]"
                 val type = object : TypeToken<List<Map<String, Any>>>() {}.type
                 val rawList: List<Map<String, Any>> = Gson().fromJson(json, type)
 
-                allModels = rawList.map { map ->
-                    val id = map["id"] as? String ?: "Unknown"
+                val modelList = mutableListOf<ModelItem>()
+                for (map in rawList) {
+                    val id = map["id"] as? String ?: continue
                     val downloads = (map["downloads"] as? Double)?.toInt() ?: 0
-                    ModelItem(id, "تحميلات: $downloads", 0.0, 0.0, "chat", "https://huggingface.co/$id", "")
+                    
+                    // بنستخرج اسم الملف اللي جواه
+                    val siblings = map["siblings"] as? List<Map<String, String>>
+                    val ggufFile = siblings?.find { it["rfilename"]?.endsWith(".gguf") == true }
+                    
+                    if (ggufFile != null) {
+                        val filename = ggufFile["rfilename"]!!
+                        // تخمين الحجم من اسم الملف (لو فيه رقم زي 1.5B يبقى تقريباً 1.5GB)
+                        val sizeGb = extractSizeFromName(filename)
+                        val requiredRam = (sizeGb * 1.2).roundToInt().toDouble() // الرام المطلوبة أعلى من الحجم شوية
+                        
+                        val downloadUrl = "https://huggingface.co/$id/resolve/main/$filename"
+                        
+                        modelList.add(
+                            ModelItem(
+                                name = id,
+                                description = "الملف: $filename\nتحميلات: $downloads",
+                                requiredRam = requiredRam,
+                                sizeGb = sizeGb,
+                                category = "chat",
+                                downloadUrl = downloadUrl,
+                                iconUrl = "https://huggingface.co/front/assets/huggingface_logo-noborder.svg"
+                            )
+                        )
+                    }
                 }
 
+                allModels = modelList
                 runOnUiThread {
-                    adapter = ModelsAdapter(allModels, 24)
+                    adapter = ModelsAdapter(allModels, 24) // بنفترض 24 جيجا رام كحد أقصى للتجربة
                     recyclerView.adapter = adapter
                     progressBar.visibility = View.GONE
+                    etSearch.isEnabled = true
                 }
             } catch (e: IOException) {
                 runOnUiThread { progressBar.visibility = View.GONE }
             }
         }.start()
+    }
+
+    private fun extractSizeFromName(filename: String): Double {
+        // بنبحث عن أرقام زي 0.5 أو 1.5 أو 7 أو 14
+        val regex = "(\\d+\\.?\\d*)[Bb]".toRegex()
+        val match = regex.find(filename)
+        return if (match != null) {
+            match.groupValues[1].toDouble()
+        } else {
+            2.0 // قيمة افتراضية لو مفيش رقم
+        }
     }
 }
 

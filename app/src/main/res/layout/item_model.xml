@@ -17,9 +17,10 @@
 
         <ImageView
             android:id="@+id/modelIcon"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@android:drawable/ic_menu_gallery"/>
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@android:drawable/ic_menu_gallery"
+            app:tint="#ffffff"/>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -35,7 +36,9 @@
                 android:text="Model Name"
                 android:textColor="#f8fafc"
                 android:textSize="16sp"
-                android:textStyle="bold"/>
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"/>
 
             <TextView
                 android:id="@+id/modelSpecs"
@@ -43,7 +46,8 @@
                 android:layout_height="wrap_content"
                 android:text="2GB RAM - 1.5GB Size"
                 android:textColor="#94a3b8"
-                android:textSize="12sp"/>
+                android:textSize="12sp"
+                android:layout_marginTop="4dp"/>
         </LinearLayout>
 
         <Button

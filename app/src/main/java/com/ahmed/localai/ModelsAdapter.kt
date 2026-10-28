@@ -12,7 +12,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 
 class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: Long) : RecyclerView.Adapter<ModelsAdapter.ViewHolder>() {
 
@@ -29,17 +28,18 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val model = models[position]
-        
-        // تنظيف اسم الموديل عشان يبان حلو
-        val displayName = model.name.substringAfter("/")
-        holder.name.text = displayName
-        holder.specs.text = "الحجم: ${model.sizeGb}GB | الرام: ${model.requiredRam}GB\n${model.description}"
-        
-        // تحميل الأيقونة
-        Glide.with(holder.itemView.context)
-            .load(model.iconUrl)
-            .circleCrop()
-            .into(holder.icon)
+        holder.name.text = model.name
+        holder.specs.text = "${model.description}\nRAM: ${model.requiredRam}GB | Size: ${model.sizeGb}GB"
+
+        // أيقونة حسب النوع
+        val iconRes = when (model.category) {
+            "chat" -> android.R.drawable.ic_menu_edit
+            "vision" -> android.R.drawable.ic_menu_camera
+            "image" -> android.R.drawable.ic_menu_gallery
+            else -> android.R.drawable.ic_menu_info_details
+        }
+        holder.icon.setImageResource(iconRes)
+        holder.icon.setColorFilter(0xFF60a5fa.toInt())
 
         if (model.requiredRam > deviceRam) {
             holder.btn.isEnabled = false
@@ -55,7 +55,7 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
 
         holder.btn.setOnClickListener {
             startDownload(holder.itemView.context, model)
-            Toast.makeText(holder.itemView.context, "بدأ التنزيل... تابع من الإشعارات", Toast.LENGTH_LONG).show()
+            Toast.makeText(holder.itemView.context, "بدأ تحميل ${model.name}", Toast.LENGTH_LONG).show()
             holder.btn.text = "جاري التنزيل..."
             holder.btn.isEnabled = false
         }
@@ -70,17 +70,15 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
 
     private fun startDownload(context: Context, model: ModelItem) {
         val fileName = model.downloadUrl.substringAfterLast("/")
-        val folder = "AHMED_AI"
-        
         val request = DownloadManager.Request(Uri.parse(model.downloadUrl))
-            .setTitle("AHMED AI: $fileName")
+            .setTitle("AHMED AI: ${model.name}")
             .setDescription("جاري التحميل...")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "$folder/$fileName")
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "AHMED_AI/$fileName")
             .setAllowedOverMetered(true)
             .setAllowedOverRoaming(true)
 
-        val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        downloadManager.enqueue(request)
+        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+        dm.enqueue(request)
     }
 }

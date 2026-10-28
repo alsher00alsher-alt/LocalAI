@@ -2,7 +2,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
 android {
     namespace = "com.ahmed.localai"
     compileSdk = 34
-    defaultConfig { applicationId = "com.ahmed.localai"; minSdk = 26; targetSdk = 34; versionCode = 1; versionName = "1.0" }
+    defaultConfig { applicationId = "com.ahmed.localai"; minSdk = 26; targetSdk = 34; versionCode = 1; versionName = "2.0" }
     buildTypes { release { isMinifyEnabled = false } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
@@ -16,4 +16,9 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("com.github.bumptech.glide:glide:4.16.0")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
+    
+    // مكتبة قراءة مواصفات الجهاز
+    implementation("com.github.sidAndroid01:DeviceInfoLibrary:1.0.0")
+    // مكتبة التحميل السريع مع النسبة
+    implementation("com.github.khushpanchal:Ketch:2.0.6")
 }

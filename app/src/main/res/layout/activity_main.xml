@@ -3,32 +3,57 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#0f172a"
+    android:background="#0b1120"
     android:gravity="center"
-    android:padding="20dp">
+    android:padding="24dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="🤖 AHMED AI"
+        android:text="AHMED AI"
         android:textColor="#60a5fa"
-        android:textSize="40sp"
+        android:textSize="48sp"
         android:textStyle="bold"
-        android:layout_marginBottom="5dp"/>
+        android:letterSpacing="0.1"
+        android:layout_marginBottom="8dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="الذكاء الاصطناعي على جهازك"
+        android:text="الذكاء الاصطناعي في جيبك"
         android:textColor="#94a3b8"
         android:textSize="16sp"
         android:layout_marginBottom="60dp"/>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardDevice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        app:cardBackgroundColor="#1e293b"
+        app:cardCornerRadius="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/tvDeviceInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="جاري فحص الجهاز..."
+                android:textColor="#e2e8f0"
+                android:textSize="14sp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
     <Button
         android:id="@+id/btnChat"
         android:layout_width="match_parent"
         android:layout_height="70dp"
-        android:text="💬 شات ذكي"
+        android:text="💬 ابدأ الشات"
         android:backgroundTint="#3b82f6"
         android:textColor="#ffffff"
         android:textSize="20sp"
@@ -38,7 +63,7 @@
         android:id="@+id/btnModels"
         android:layout_width="match_parent"
         android:layout_height="70dp"
-        android:text="📦 تحميل النماذج"
+        android:text="📦 استكشف النماذج"
         android:backgroundTint="#10b981"
         android:textColor="#ffffff"
         android:textSize="20sp"/>

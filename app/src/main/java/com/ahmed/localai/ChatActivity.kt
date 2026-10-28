@@ -1,9 +1,13 @@
 package com.ahmed.localai
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.provider.Settings
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -33,13 +37,12 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 100)
-        }
+        checkStoragePermission()
 
         val recyclerView = findViewById<RecyclerView>(R.id.chatRecyclerView)
         val etMessage = findViewById<EditText>(R.id.etMessage)
         val btnSend = findViewById<Button>(R.id.btnSend)
+        val btnRefresh = findViewById<Button>(R.id.btnRefresh)
         spinner = findViewById(R.id.spinnerModels)
 
         chatAdapter = ChatAdapter(messages)
@@ -47,6 +50,11 @@ class ChatActivity : AppCompatActivity() {
         recyclerView.adapter = chatAdapter
 
         loadModelsList()
+
+        btnRefresh.setOnClickListener {
+            loadModelsList()
+            Toast.makeText(this, "تم تحديث قائمة الموديلات", Toast.LENGTH_SHORT).show()
+        }
 
         btnSend.setOnClickListener {
             val text = etMessage.text.toString().trim()
@@ -73,27 +81,37 @@ class ChatActivity : AppCompatActivity() {
                     if (bridge == null || currentPath != file.absolutePath) {
                         bridge?.free()
                         bridge = LlamaBridge()
-                        // استخدام كل أنوية المعالج للسرعة القصوى
                         val maxThreads = Runtime.getRuntime().availableProcessors()
                         val ok = bridge!!.load(file.absolutePath, maxThreads)
                         if (!ok) return@withContext "فشل تحميل الموديل"
                         currentPath = file.absolutePath
                         chatHistory = StringBuilder()
                     }
-                    
-                    // تنظيف السياق لو بقى طويل جداً عشان ميبطأش
                     if (chatHistory.length > 2000) {
                         chatHistory = StringBuilder()
                     }
-
                     chatHistory.append("<|im_start|>user\n").append(text).append("<|im_end|>\n<|im_start|>assistant\n")
-                    val out = bridge!!.generate(chatHistory.toString(), 256) // 256 توكن كفاية جداً للرد السريع
+                    val out = bridge!!.generate(chatHistory.toString(), 256)
                     chatHistory.append(out).append("<|im_end|>\n")
                     out.trim()
                 }
                 messages[thinkIdx] = ChatMessage(reply, false)
                 chatAdapter.notifyItemChanged(thinkIdx)
                 recyclerView.scrollToPosition(thinkIdx)
+            }
+        }
+    }
+
+    private fun checkStoragePermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
+                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                intent.data = Uri.parse("package:$packageName")
+                startActivity(intent)
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 100)
             }
         }
     }

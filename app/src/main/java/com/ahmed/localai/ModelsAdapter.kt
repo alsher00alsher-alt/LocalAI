@@ -4,6 +4,8 @@ import android.app.DownloadManager
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -31,7 +33,6 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
         holder.name.text = model.name
         holder.specs.text = "${model.description}\nRAM: ${model.requiredRam}GB | Size: ${model.sizeGb}GB"
 
-        // أيقونة حسب النوع
         val iconRes = when (model.category) {
             "chat" -> android.R.drawable.ic_menu_edit
             "vision" -> android.R.drawable.ic_menu_camera
@@ -54,10 +55,60 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
         }
 
         holder.btn.setOnClickListener {
-            startDownload(holder.itemView.context, model)
-            Toast.makeText(holder.itemView.context, "بدأ تحميل ${model.name}", Toast.LENGTH_LONG).show()
-            holder.btn.text = "جاري التنزيل..."
+            val dm = holder.itemView.context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val fileName = model.downloadUrl.substringAfterLast("/")
+            
+            // التأكد إن الملف مش متحمل قبل كده
+            val file = java.io.File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "AHMED_AI/$fileName")
+            if (file.exists()) {
+                Toast.makeText(holder.itemView.context, "الملف موجود بالفعل!", Toast.LENGTH_SHORT).show()
+                holder.btn.text = "تم التنزيل ✓"
+                holder.btn.setBackgroundColor(0xFF10b981.toInt())
+                return@setOnClickListener
+            }
+
+            val request = DownloadManager.Request(Uri.parse(model.downloadUrl))
+                .setTitle("AHMED AI: ${model.name}")
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "AHMED_AI/$fileName")
+                .setAllowedOverMetered(true)
+
+            val downloadId = dm.enqueue(request)
+            Toast.makeText(holder.itemView.context, "بدأ التنزيل...", Toast.LENGTH_LONG).show()
             holder.btn.isEnabled = false
+
+            // متابعة النسبة المئوية
+            val handler = Handler(Looper.getMainLooper())
+            val runnable = object : Runnable {
+                override fun run() {
+                    val query = DownloadManager.Query().setFilterById(downloadId)
+                    val cursor = dm.query(query)
+                    if (cursor.moveToFirst()) {
+                        val bytesDownloaded = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                        val bytesTotal = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                        val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
+                        
+                        if (status == DownloadManager.STATUS_SUCCESSFUL) {
+                            holder.btn.text = "تم التنزيل ✓"
+                            holder.btn.setBackgroundColor(0xFF10b981.toInt())
+                        } else if (status == DownloadManager.STATUS_FAILED) {
+                            holder.btn.text = "فشل التنزيل"
+                            holder.btn.setBackgroundColor(0xFFef4444.toInt())
+                            holder.btn.isEnabled = true
+                        } else {
+                            if (bytesTotal > 0) {
+                                val progress = (bytesDownloaded * 100 / bytesTotal)
+                                holder.btn.text = "$progress%"
+                            } else {
+                                holder.btn.text = "جاري التنزيل..."
+                            }
+                            handler.postDelayed(this, 1000) // تحديث كل ثانية
+                        }
+                    }
+                    cursor.close()
+                }
+            }
+            handler.post(runnable)
         }
     }
 
@@ -66,19 +117,5 @@ class ModelsAdapter(private var models: List<ModelItem>, private val deviceRam: 
     fun updateList(newModels: List<ModelItem>) {
         models = newModels
         notifyDataSetChanged()
-    }
-
-    private fun startDownload(context: Context, model: ModelItem) {
-        val fileName = model.downloadUrl.substringAfterLast("/")
-        val request = DownloadManager.Request(Uri.parse(model.downloadUrl))
-            .setTitle("AHMED AI: ${model.name}")
-            .setDescription("جاري التحميل...")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "AHMED_AI/$fileName")
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
-
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        dm.enqueue(request)
     }
 }

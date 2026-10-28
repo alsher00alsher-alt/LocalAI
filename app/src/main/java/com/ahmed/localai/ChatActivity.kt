@@ -2,7 +2,6 @@ package com.ahmed.localai
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.widget.ArrayAdapter
@@ -34,7 +33,6 @@ class ChatActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat)
 
-        // طلب صلاحية التخزين
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 100)
         }
@@ -75,13 +73,21 @@ class ChatActivity : AppCompatActivity() {
                     if (bridge == null || currentPath != file.absolutePath) {
                         bridge?.free()
                         bridge = LlamaBridge()
-                        val ok = bridge!!.load(file.absolutePath, 4)
+                        // استخدام كل أنوية المعالج للسرعة القصوى
+                        val maxThreads = Runtime.getRuntime().availableProcessors()
+                        val ok = bridge!!.load(file.absolutePath, maxThreads)
                         if (!ok) return@withContext "فشل تحميل الموديل"
                         currentPath = file.absolutePath
                         chatHistory = StringBuilder()
                     }
+                    
+                    // تنظيف السياق لو بقى طويل جداً عشان ميبطأش
+                    if (chatHistory.length > 2000) {
+                        chatHistory = StringBuilder()
+                    }
+
                     chatHistory.append("<|im_start|>user\n").append(text).append("<|im_end|>\n<|im_start|>assistant\n")
-                    val out = bridge!!.generate(chatHistory.toString(), 512)
+                    val out = bridge!!.generate(chatHistory.toString(), 256) // 256 توكن كفاية جداً للرد السريع
                     chatHistory.append(out).append("<|im_end|>\n")
                     out.trim()
                 }

@@ -10,6 +10,7 @@
 struct CtxWrap {
     llama_model* model;
     llama_context* ctx;
+    const llama_vocab* vocab;
 };
 
 extern "C" JNIEXPORT jlong JNICALL
@@ -28,7 +29,7 @@ Java_com_ahmed_localai_LlamaBridge_initContext(JNIEnv* env, jobject, jstring jpa
     cp.n_threads_batch = n_threads;
     llama_context* ctx = llama_new_context_with_model(model, cp);
     if (!ctx) { llama_free_model(model); return 0; }
-    auto* w = new CtxWrap{model, ctx};
+    auto* w = new CtxWrap{model, ctx, llama_model_get_vocab(model)};
     return reinterpret_cast<jlong>(w);
 }
 
@@ -50,8 +51,8 @@ Java_com_ahmed_localai_LlamaBridge_generateNative(JNIEnv* env, jobject, jlong ha
     env->ReleaseStringUTFChars(jprompt, prompt_c);
 
     std::vector<llama_token> tokens(prompt.size() + 64);
-    int n = llama_tokenize(w->model, prompt.c_str(), (int32_t)prompt.size(), tokens.data(), (int32_t)tokens.size(), true, true);
-    if (n < 0) { tokens.resize(-n); n = llama_tokenize(w->model, prompt.c_str(), (int32_t)prompt.size(), tokens.data(), (int32_t)tokens.size(), true, true); }
+    int n = llama_tokenize(w->vocab, prompt.c_str(), (int32_t)prompt.size(), tokens.data(), (int32_t)tokens.size(), true, true);
+    if (n < 0) { tokens.resize(-n); n = llama_tokenize(w->vocab, prompt.c_str(), (int32_t)prompt.size(), tokens.data(), (int32_t)tokens.size(), true, true); }
     tokens.resize(n);
     if (n == 0) return env->NewStringUTF("");
 
@@ -69,9 +70,9 @@ Java_com_ahmed_localai_LlamaBridge_generateNative(JNIEnv* env, jobject, jlong ha
     std::string result;
     for (int i = 0; i < max_tokens; i++) {
         llama_token id = llama_sampler_sample(smpl, w->ctx, -1);
-        if (llama_token_is_eog(w->model, id)) break;
+        if (llama_vocab_is_eog(w->vocab, id)) break;
         char buf[256];
-        int len = llama_token_to_piece(w->model, id, buf, sizeof(buf), 0, true);
+        int len = llama_token_to_piece(w->vocab, id, buf, sizeof(buf), 0, true);
         if (len > 0) result.append(buf, len);
         llama_batch b2 = llama_batch_get_one(&id, 1);
         if (llama_decode(w->ctx, b2) != 0) break;

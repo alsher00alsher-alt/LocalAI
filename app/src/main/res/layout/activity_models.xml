@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="📦 النماذج المتاحة"
+        android:text="📦 مكتبة النماذج"
         android:textColor="#f8fafc"
         android:textSize="22sp"
         android:textStyle="bold"
@@ -23,6 +23,25 @@
         android:textColor="#94a3b8"
         android:textSize="14sp"
         android:padding="15dp"/>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:background="#1e293b">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <Button android:id="@+id/btnAll" android:layout_width="wrap_content" android:layout_height="40dp" android:text="الكل" android:backgroundTint="#3b82f6" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btnChat" android:layout_width="wrap_content" android:layout_height="40dp" android:text="💬 شات" android:backgroundTint="#10b981" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btnVision" android:layout_width="wrap_content" android:layout_height="40dp" android:text="👁️ رؤية" android:backgroundTint="#f59e0b" android:layout_marginEnd="8dp"/>
+            <Button android:id="@+id/btnImage" android:layout_width="wrap_content" android:layout_height="40dp" android:text="🎨 صور" android:backgroundTint="#8b5cf6"/>
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"

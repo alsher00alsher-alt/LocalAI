@@ -10,36 +10,36 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="🤖 Local AI"
+        android:text="🤖 AHMED AI"
         android:textColor="#60a5fa"
-        android:textSize="36sp"
+        android:textSize="40sp"
         android:textStyle="bold"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginBottom="5dp"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="شغل الموديلات أوفلاين"
+        android:text="الذكاء الاصطناعي على جهازك"
         android:textColor="#94a3b8"
         android:textSize="16sp"
-        android:layout_marginBottom="50dp"/>
+        android:layout_marginBottom="60dp"/>
 
     <Button
         android:id="@+id/btnChat"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:text="💬 ابدأ شات"
+        android:layout_height="70dp"
+        android:text="💬 شات ذكي"
         android:backgroundTint="#3b82f6"
         android:textColor="#ffffff"
-        android:textSize="18sp"
+        android:textSize="20sp"
         android:layout_marginBottom="15dp"/>
 
     <Button
         android:id="@+id/btnModels"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="70dp"
         android:text="📦 تحميل النماذج"
         android:backgroundTint="#10b981"
         android:textColor="#ffffff"
-        android:textSize="18sp"/>
+        android:textSize="20sp"/>
 </LinearLayout>

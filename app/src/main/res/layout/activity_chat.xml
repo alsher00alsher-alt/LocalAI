@@ -5,6 +5,29 @@
     android:orientation="vertical"
     android:background="#0f172a">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:background="#1e293b"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="النموذج:"
+            android:textColor="#f8fafc"
+            android:layout_marginEnd="8dp"/>
+
+        <Spinner
+            android:id="@+id/spinnerModels"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="#3b82f6"/>
+    </LinearLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/chatRecyclerView"
         android:layout_width="match_parent"
@@ -28,8 +51,7 @@
             android:textColor="#f8fafc"
             android:textColorHint="#64748b"
             android:background="#0f172a"
-            android:padding="12dp"
-            android:textSize="16sp"/>
+            android:padding="12dp"/>
 
         <Button
             android:id="@+id/btnSend"

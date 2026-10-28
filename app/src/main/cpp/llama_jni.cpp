@@ -19,14 +19,13 @@ Java_com_ahmed_localai_LlamaBridge_initContext(JNIEnv* env, jobject, jstring jpa
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
-    mp.use_mmap = true;
     llama_model* model = llama_model_load_from_file(path, mp);
     env->ReleaseStringUTFChars(jpath, path);
     if (!model) { LOGE("model load failed"); return 0; }
     
     llama_context_params cp = llama_context_default_params();
-    cp.n_ctx = 1024;      // سياق أصغر = أسرع
-    cp.n_batch = 1024;    // batch أكبر = معالجة أسرع للـ prompt
+    cp.n_ctx = 1024;
+    cp.n_batch = 1024;
     cp.n_ubatch = 1024;
     cp.n_threads = n_threads;
     cp.n_threads_batch = n_threads;
@@ -60,7 +59,6 @@ Java_com_ahmed_localai_LlamaBridge_generateNative(JNIEnv* env, jobject, jlong ha
     tokens.resize(n);
     if (n == 0) return env->NewStringUTF("");
 
-    // نمسح الكاش قبل كل رد
     llama_memory_clear(llama_get_memory(w->ctx), true);
     
     llama_batch batch = llama_batch_get_one(tokens.data(), (int32_t)tokens.size());
@@ -71,7 +69,8 @@ Java_com_ahmed_localai_LlamaBridge_generateNative(JNIEnv* env, jobject, jlong ha
     llama_sampler_chain_add(smpl, llama_sampler_init_top_k(64));
     llama_sampler_chain_add(smpl, llama_sampler_init_top_p(0.95f, 1));
     llama_sampler_chain_add(smpl, llama_sampler_init_temp(0.9f));
-    llama_sampler_chain_add(smpl, llama_sampler_init_penalties(64, 1.1f, 0.0f, 0.0f));
+    // penalties: (last_n, repeat, freq, present, penalize_nl)
+    llama_sampler_chain_add(smpl, llama_sampler_init_penalties(64, 1.1f, 0.0f, 0.0f, false));
     llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
     std::string result;

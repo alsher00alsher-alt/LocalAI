@@ -19,14 +19,18 @@ Java_com_ahmed_localai_LlamaBridge_initContext(JNIEnv* env, jobject, jstring jpa
     llama_backend_init();
     llama_model_params mp = llama_model_default_params();
     mp.n_gpu_layers = 0;
+    mp.use_mmap = true;
     llama_model* model = llama_model_load_from_file(path, mp);
     env->ReleaseStringUTFChars(jpath, path);
     if (!model) { LOGE("model load failed"); return 0; }
+    
     llama_context_params cp = llama_context_default_params();
-    cp.n_ctx = 4096;
-    cp.n_batch = 512;
+    cp.n_ctx = 1024;      // سياق أصغر = أسرع
+    cp.n_batch = 1024;    // batch أكبر = معالجة أسرع للـ prompt
+    cp.n_ubatch = 1024;
     cp.n_threads = n_threads;
     cp.n_threads_batch = n_threads;
+    
     llama_context* ctx = llama_init_from_model(model, cp);
     if (!ctx) { llama_model_free(model); return 0; }
     auto* w = new CtxWrap{model, ctx, llama_model_get_vocab(model)};
@@ -56,21 +60,25 @@ Java_com_ahmed_localai_LlamaBridge_generateNative(JNIEnv* env, jobject, jlong ha
     tokens.resize(n);
     if (n == 0) return env->NewStringUTF("");
 
+    // نمسح الكاش قبل كل رد
+    llama_memory_clear(llama_get_memory(w->ctx), true);
+    
     llama_batch batch = llama_batch_get_one(tokens.data(), (int32_t)tokens.size());
     if (llama_decode(w->ctx, batch) != 0) return env->NewStringUTF("ERROR: decode failed");
 
     auto sparams = llama_sampler_chain_default_params();
     llama_sampler* smpl = llama_sampler_chain_init(sparams);
-    llama_sampler_chain_add(smpl, llama_sampler_init_top_k(40));
+    llama_sampler_chain_add(smpl, llama_sampler_init_top_k(64));
     llama_sampler_chain_add(smpl, llama_sampler_init_top_p(0.95f, 1));
-    llama_sampler_chain_add(smpl, llama_sampler_init_temp(0.8f));
+    llama_sampler_chain_add(smpl, llama_sampler_init_temp(0.9f));
+    llama_sampler_chain_add(smpl, llama_sampler_init_penalties(64, 1.1f, 0.0f, 0.0f));
     llama_sampler_chain_add(smpl, llama_sampler_init_dist(LLAMA_DEFAULT_SEED));
 
     std::string result;
     for (int i = 0; i < max_tokens; i++) {
         llama_token id = llama_sampler_sample(smpl, w->ctx, -1);
         if (llama_vocab_is_eog(w->vocab, id)) break;
-        char buf[256];
+        char buf[512];
         int len = llama_token_to_piece(w->vocab, id, buf, sizeof(buf), 0, true);
         if (len > 0) result.append(buf, len);
         llama_batch b2 = llama_batch_get_one(&id, 1);
